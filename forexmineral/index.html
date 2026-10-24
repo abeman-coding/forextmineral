@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>ForexMineral — Solar Investment Platform</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+/* ============ RESET ============ */
+*{box-sizing:border-box;margin:0;padding:0;font-family:'Segoe UI',system-ui,-apple-system,sans-serif}
+html,body{min-height:100%}
+body{background:linear-gradient(135deg,#0f172a,#1e293b);color:#e2e8f0;min-height:100vh}
+a{color:#fbbf24;text-decoration:none}
+a:hover{opacity:.85}
+.hidden{display:none !important}
+
+/* ============ AUTH ============ */
+.auth-page{display:flex;align-items:center;justify-content:center;padding:20px;min-height:100vh}
+.auth-card{background:#1e293b;padding:32px;border-radius:18px;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.brand{text-align:center;margin-bottom:24px}
+.logo{font-size:48px;display:block;line-height:1}
+.brand h1{font-size:28px;background:linear-gradient(90deg,#fbbf24,#f97316);-webkit-background-clip:text;background-clip:text;color:transparent;margin-top:6px}
+.brand p{color:#94a3b8;font-size:14px;margin-top:4px}
+form label{display:block;font-size:13px;margin:12px 0 6px;color:#cbd5e1}
+form input,form select{width:100%;padding:12px;border-radius:10px;border:1px solid #334155;background:#0f172a;color:#e2e8f0;font-size:15px}
+form input:focus,form select:focus{outline:2px solid #fbbf24;border-color:transparent}
+.btn-primary{width:100%;margin-top:20px;padding:13px;border:none;border-radius:10px;background:linear-gradient(90deg,#f97316,#fbbf24);color:#0f172a;font-weight:700;font-size:16px;cursor:pointer}
+.btn-primary:active{transform:scale(.98)}
+.small{text-align:center;margin-top:16px;font-size:14px;color:#94a3b8}
+.tg-links{display:flex;gap:12px;justify-content:center;margin-top:20px;font-size:14px;flex-wrap:wrap}
+
+/* ============ SHELL ============ */
+.shell{display:flex;min-height:100vh}
+.sidebar{width:230px;background:#111827;padding:20px 12px;border-right:1px solid #1f2937;flex-shrink:0}
+.sidebar h2{font-size:18px;margin-bottom:24px;text-align:center;color:#fbbf24}
+.sidebar nav a{display:block;padding:10px 14px;border-radius:8px;color:#cbd5e1;margin-bottom:4px;font-size:14px;transition:background .15s,color .15s}
+.sidebar nav a:hover,.sidebar nav a.active{background:#1f2937;color:#fbbf24}
+.main{flex:1;padding:24px;max-width:100%;overflow-x:auto}
+.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px}
+
+/* ============ CARDS ============ */
+.wallets{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:22px}
+.wallet-card{background:linear-gradient(135deg,#1e293b,#334155);padding:18px;border-radius:14px}
+.wallet-card small{color:#94a3b8;font-size:12px}
+.wallet-card h3{margin-top:6px;font-size:22px;color:#fbbf24}
+.card{background:#1e293b;padding:20px;border-radius:14px;border:1px solid #334155}
+.card h3{margin-bottom:12px;color:#fbbf24}
+
+/* ============ PACKAGES ============ */
+.grid{display:grid;gap:16px}
+.pkg-img{width:100%;height:150px;object-fit:cover;border-radius:10px;background:#0f172a;display:block}
+.pkg-card{background:#1e293b;border-radius:14px;overflow:hidden;border:1px solid #334155}
+.pkg-card .body{padding:14px}
+.pkg-card h4{color:#fbbf24;margin-bottom:6px;font-size:15px}
+.pkg-row{display:flex;justify-content:space-between;font-size:13px;color:#cbd5e1;margin-top:4px}
+
+/* ============ BUTTONS ============ */
+.btn{padding:10px 16px;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px;display:inline-block;transition:opacity .15s}
+.btn:hover{opacity:.9}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-gold{background:linear-gradient(90deg,#f97316,#fbbf24);color:#0f172a}
+.btn-gray{background:#334155;color:#e2e8f0}
+.btn-red{background:#dc2626;color:#fff}
+.btn-green{background:#16a34a;color:#fff}
+
+/* ============ TABLES ============ */
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:8px 6px;text-align:left;border-bottom:1px solid #334155;vertical-align:top}
+th{color:#94a3b8;font-weight:500}
+input[type="checkbox"]{width:18px;height:18px;accent-color:#fbbf24;cursor:pointer}
+
+/* ============ BADGES ============ */
+.badge{padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;display:inline-block}
+.badge.pending{background:#854d0e;color:#fde68a}
+.badge.approved{background:#166534;color:#bbf7d0}
+.badge.rejected{background:#7f1d1d;color:#fecaca}
+
+/* ============ TOAST ============ */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(120%);background:#1e293b;color:#e2e8f0;padding:12px 22px;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.5);transition:transform .3s ease;z-index:9999;font-size:14px;max-width:90vw}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.toast.success{border-left:4px solid #22c55e}
+.toast.error{border-left:4px solid #ef4444}
+.toast.info{border-left:4px solid #fbbf24}
+
+input[readonly]{opacity:.75}
+#refLink{margin-top:8px}
+
+@media (max-width:820px){
+  .shell{flex-direction:column}
+  .sidebar{width:100%;display:flex;overflow-x:auto;padding:10px;border-right:none;border-bottom:1px solid #1f2937}
+  .sidebar h2{display:none}
+  .sidebar nav{display:flex;gap:6px}
+  .sidebar nav a{white-space:nowrap;margin:0;padding:8px 12px;font-size:13px}
+  .main{padding:16px}
+  .topbar h2{font-size:18px}
+  .wallet-card h3{font-size:18px}
+  table{font-size:12px}
+  th,td{padding:6px 4px}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN PAGE -->
+<section id="page-login" class="page auth-page">
+  <div class="auth-card">
+    <div class="brand">
+      <span class="logo">☀️</span>
+      <h1>ForexMineral</h1>
+      <p>Solar Investment Platform</p>
+    </div>
+    <form id="loginForm">
+      <label>Phone Number</label>
+      <input id="loginPhone" placeholder="09xxxxxxxx" required>
+      <label>Password</label>
+      <input id="loginPassword" type="password" required>
+      <button class="btn-primary" type="submit">Login</button>
+    </form>
+    <p class="small">New here? <a href="#register">Create account</a></p>
+    <p class="small"><a href="#admin-login">🔐 Admin Login</a></p>
+    <div class="tg-links">
+      <a href="https://t.me/solarcustomer_6065" target="_blank">💬 Support</a>
+      <a href="https://t.me/Solar_vip_channel" target="_blank">📢 Channel</a>
+    </div>
+  </div>
+</section>
+
+<!-- REGISTER PAGE -->
+<section id="page-register" class="page auth-page">
+  <div class="auth-card">
+    <div class="brand"><span class="logo">☀️</span><h1>Join ForexMineral</h1></div>
+    <form id="regForm">
+      <label>Full Name</label><input id="regName" required>
+      <label>Phone Number</label><input id="regPhone" placeholder="09xxxxxxxx" required>
+      <label>Password (min 6)</label><input id="regPassword" type="password" minlength="6" required>
+      <label>Referral Code (optional)</label><input id="regRef" placeholder="Forex16/2018xxxxx">
+      <button class="btn-primary" type="submit">Create Account</button>
+    </form>
+    <p class="small">Already have an account? <a href="#login">Login</a></p>
+  </div>
+</section>
+
+<!-- ADMIN LOGIN -->
+<section id="page-admin-login" class="page auth-page">
+  <div class="auth-card">
+    <div class="brand"><span class="logo">⚙️</span><h1>Admin Login</h1></div>
+    <form id="adminLoginForm">
+      <label>Username</label><input id="adminUser" required>
+      <label>Password</label><input id="adminPass" type="password" required>
+      <button class="btn-primary" type="submit">Login as Admin</button>
+    </form>
+    <p class="small"><a href="#login">← User Login</a></p>
+  </div>
+</section>
+
+<!-- USER APP SHELL -->
+<section id="page-app" class="page">
+  <div class="shell">
+    <aside class="sidebar">
+      <h2>☀️ ForexMineral</h2>
+      <nav id="navMenu">
+        <a href="#dashboard" data-nav="dashboard">🏠 Dashboard</a>
+        <a href="#invest" data-nav="invest">📦 Invest</a>
+        <a href="#deposit" data-nav="deposit">💰 Deposit</a>
+        <a href="#withdraw" data-nav="withdraw">💸 Withdraw</a>
+        <a href="#team" data-nav="team">👥 Team</a>
+        <a href="#profile" data-nav="profile">👤 Profile</a>
+        <a href="#" id="logoutBtn">🚪 Logout</a>
+      </nav>
+    </aside>
+    <main class="main" id="mainContent"></main>
+  </div>
+</section>
+
+<!-- ADMIN PANEL -->
+<section id="page-admin" class="page">
+  <div class="shell">
+    <aside class="sidebar">
+      <h2>⚙️ Admin</h2>
+      <nav>
+        <a href="#admin-dash" data-admin="dash">📊 Dashboard</a>
+        <a href="#admin-deps" data-admin="deps">💰 Deposits</a>
+        <a href="#admin-wds" data-admin="wds">💸 Withdrawals</a>
+        <a href="#admin-users" data-admin="users">👥 Users</a>
+        <a href="#admin-gift" data-admin="gift">🎁 Gift Codes</a>
+        <a href="#" id="adminLogoutBtn">🚪 Logout</a>
+      </nav>
+    </aside>
+    <main class="main" id="adminContent"></main>
+  </div>
+</section>
+
+<div id="toast" class="toast"></div>
+
+<script>
+/* ============================================================
+   ⚠️ EDIT THESE 2 LINES WITH YOUR SUPABASE VALUES
+   (From Part A — Supabase Dashboard → Settings → API)
+   ============================================================ */
+const SUPABASE_URL = 'https://ymbtatlpohnhxwlnfegd.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_bb8XPwqCc71WObt69Z6NcA_P5-O67qF';
+
+/* ============================================================
+   OTHER CONFIG
+   ============================================================ */
+const CBE_ACCOUNT = '1000755822497';
+const TG_SUPPORT  = 'https://t.me/solarcustomer_6065';
+const TG_CHANNEL  = 'https://t.me/Solar_vip_channel';
+
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let CURRENT_USER    = null;
+let CURRENT_PROFILE = null;
+let IS_ADMIN        = false;
+
+/* ============================================================
+   UTILS
+   ============================================================ */
+function $(id){ return document.getElementById(id); }
+function showToast(msg, type='info'){
+  const t = $('toast');
+  t.textContent = msg;
+  t.className = `toast show ${type}`;
+  setTimeout(()=>t.className='toast', 3000);
+}
+function fmt(n){ return Number(n||0).toFixed(2); }
+function esc(s){ return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+function money(n){ return fmt(n)+' Birr'; }
+function dateStr(d){ return new Date(d).toLocaleDateString(); }
+function confirmAction(msg){ return confirm(msg); }
+function promptNumber(msg){ const v = prompt(msg); return v===null?null:Number(v); }
+
+/* ============================================================
+   ROUTER
+   ============================================================ */
+const ROUTES = {
+  'login':        { page:'page-login',       public:true },
+  'register':     { page:'page-register',    public:true },
+  'admin-login':  { page:'page-admin-login', public:true },
+  'dashboard':    { page:'page-app',  nav:'dashboard', auth:true },
+  'invest':       { page:'page-app',  nav:'invest',    auth:true },
+  'deposit':      { page:'page-app',  nav:'deposit',   auth:true },
+  'withdraw':     { page:'page-app',  nav:'withdraw',  auth:true },
+  'team':         { page:'page-app',  nav:'team',      auth:true },
+  'profile':      { page:'page-app',  nav:'profile',   auth:true },
+  'admin-dash':   { page:'page-admin', admin:'dash',   admin:true },
+  'admin-deps':   { page:'page-admin', admin:'deps',   admin:true },
+  'admin-wds':    { page:'page-admin', admin:'wds',    admin:true },
+  'admin-users':  { page:'page-admin', admin:'users',  admin:true },
+  'admin-gift':   { page:'page-admin', admin:'gift',   admin:true },
+};
+
+function hideAllPages(){
+  document.querySelectorAll('.page').forEach(p=>p.classList.add('hidden'));
+}
+
+function nav(hash){
+  const route = (hash||'#login').replace('#','');
+  const r = ROUTES[route] || ROUTES['login'];
+
+  if(r.auth && !CURRENT_USER){ location.hash='#login'; return; }
+  if(r.admin && !IS_ADMIN){ location.hash='#login'; return; }
+  if(r.public && CURRENT_USER && route!=='admin-login' && !IS_ADMIN){ location.hash='#dashboard'; return; }
+
+  hideAllPages();
+  $(r.page).classList.remove('hidden');
+
+  if(r.page==='page-app'){
+    document.querySelectorAll('#navMenu a[data-nav]').forEach(a=>a.classList.remove('active'));
+    const active = document.querySelector(`#navMenu a[data-nav="${r.nav}"]`);
+    if(active) active.classList.add('active');
+    renderUserPage(r.nav);
+  }
+  if(r.page==='page-admin'){
+    renderAdminPage(r.admin);
+  }
+}
+window.addEventListener('hashchange', ()=>nav(location.hash));
+
+/* ============================================================
+   AUTH
+   ============================================================ */
+async function restoreSession(){
+  const { data:{ session } } = await sb.auth.getSession();
+  if(session?.user){
+    CURRENT_USER = session.user;
+    await loadProfile();
+  }
+}
+
+async function loadProfile(){
+  if(!CURRENT_USER) return;
+  const { data } = await sb.from('users').select('*').eq('id',CURRENT_USER.id).maybeSingle();
+  CURRENT_PROFILE = data || null;
+  const { data:adm } = await sb.from('admins').select('*').eq('id',CURRENT_USER.id).maybeSingle();
+  IS_ADMIN = !!adm;
+}
+
+$('loginForm').addEventListener('submit', async e=>{
+  e.preventDefault();
+  const phone = $('loginPhone').value.trim();
+  const pass  = $('loginPassword').value;
+  const email = `${phone}@forexmineral.local`;
+  const { error } = await sb.auth.signInWithPassword({ email, password: pass });
+  if(error) return showToast('Login failed: '+error.message,'error');
+
+  await restoreSession();
+  if(CURRENT_PROFILE?.is_banned){
+    await sb.auth.signOut(); CURRENT_USER=null; CURRENT_PROFILE=null;
+    return showToast('Account banned. Contact support.','error');
+  }
+  if(IS_ADMIN) location.hash='#admin-dash';
+  else         location.hash='#dashboard';
+});
+
+$('adminLoginForm').addEventListener('submit', async e=>{
+  e.preventDefault();
+  const username = $('adminUser').value.trim();
+  const pass = $('adminPass').value;
+  const email = `${username}@forexmineral.local`;
+  const { error } = await sb.auth.signInWithPassword({ email, password: pass });
+  if(error) return showToast('Admin login failed','error');
+  await restoreSession();
+  if(!IS_ADMIN){ await sb.auth.signOut(); CURRENT_USER=null; IS_ADMIN=false;
+    return showToast('Not an admin account','error'); }
+  location.hash='#admin-dash';
+});
+
+$('regForm').addEventListener('submit', async e=>{
+  e.preventDefault();
+  const full_name = $('regName').value.trim();
+  const phone     = $('regPhone').value.trim();
+  const pass      = $('regPassword').value;
+  const refCode   = $('regRef').value.trim();
+  if(pass.length<6) return showToast('Password must be 6+ chars','error');
+  const email = `${phone}@forexmineral.local`;
+
+  const { data:authData, error:authErr } = await sb.auth.signUp({ email, password:pass });
+  if(authErr) return showToast(authErr.message,'error');
+  const uid = authData.user.id;
+
+  let referred_by = null;
+  if(refCode){
+    const { data:ref } = await sb.from('users').select('id').eq('referral_code',refCode).maybeSingle();
+    if(ref) referred_by = ref.id;
+  }
+  const user_code     = '1618' + Math.floor(100000 + Math.random()*900000);
+  const referral_code = 'Forex16/2018' + Math.floor(10000 + Math.random()*90000);
+
+  const { error:insErr } = await sb.from('users').insert({
+    id:uid, user_code, full_name, phone, referral_code, referred_by,
+    income_wallet:50, recharge_wallet:0
+  });
+  if(insErr) return showToast(insErr.message,'error');
+
+  showToast('Account created! Login to continue.','success');
+  location.hash='#login';
+});
+
+async function doLogout(){
+  await sb.auth.signOut();
+  CURRENT_USER=null; CURRENT_PROFILE=null; IS_ADMIN=false;
+  location.hash='#login';
+}
+$('logoutBtn').addEventListener('click', e=>{ e.preventDefault(); doLogout(); });
+$('adminLogoutBtn').addEventListener('click', e=>{ e.preventDefault(); doLogout(); });
+
+/* ============================================================
+   USER PAGES
+   ============================================================ */
+async function renderUserPage(which){
+  const main = $('mainContent');
+  main.innerHTML = '<p>Loading…</p>';
+  if(which==='dashboard') return renderDashboard(main);
+  if(which==='invest')    return renderInvest(main);
+  if(which==='deposit')   return renderDeposit(main);
+  if(which==='withdraw')  return renderWithdraw(main);
+  if(which==='team')      return renderTeam(main);
+  if(which==='profile')   return renderProfile(main);
+}
+
+async function renderDashboard(main){
+  await loadProfile();
+  const u = CURRENT_PROFILE;
+  const { count:teamCount } = await sb.from('users').select('*',{count:'exact',head:true}).eq('referred_by',u.id);
+  const { data:invests } = await sb.from('investments')
+    .select('*, packages(*)').eq('user_id',u.id).eq('status','active');
+
+  main.innerHTML = `
+    <div class="topbar">
+      <div><h2>Hello, ${esc(u.full_name)}</h2>
+      <small style="color:#94a3b8">User ID: ${u.user_code}</small></div>
+      <a class="btn btn-gray" href="${TG_SUPPORT}" target="_blank">💬 Support</a>
+    </div>
+
+    <div class="wallets">
+      <div class="wallet-card"><small>Income Wallet</small><h3>${money(u.income_wallet)}</h3></div>
+      <div class="wallet-card"><small>Recharge Wallet</small><h3>${money(u.recharge_wallet)}</h3></div>
+      <div class="wallet-card"><small>Active Investments</small><h3>${invests.length}</h3></div>
+      <div class="wallet-card"><small>Total Team</small><h3>${teamCount||0}</h3></div>
+    </div>
+
+    <div class="card" style="margin-bottom:18px">
+      <h3>📢 Announcements</h3>
+      <p>Join our channel: <a href="${TG_CHANNEL}" target="_blank">Solar_vip_channel</a></p>
+      <p style="margin-top:6px">Daily 10 Birr bonus — click once every day for 3 days.</p>
+      <button class="btn btn-gold" style="margin-top:10px" id="bonusBtn" ${u.can_claim?'':'disabled'}>
+        🎁 Claim 10 Birr Daily Bonus
+      </button>
+    </div>
+
+    <h3 style="margin:12px 0">⚡ Active Investments — Click daily</h3>
+    <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(260px,1fr))" id="investList"></div>
+  `;
+
+  $('bonusBtn')?.addEventListener('click', claimDailyBonus);
+
+  const list = $('investList');
+  if(!invests.length){
+    list.innerHTML = '<p>No active investments yet. <a href="#invest">Invest now →</a></p>';
+    return;
+  }
+  list.innerHTML = invests.map(inv=>{
+    const canClick = !inv.last_claim_at || (Date.now() - new Date(inv.last_claim_at)) > 24*3600*1000;
+    return `
+      <div class="pkg-card">
+        <img class="pkg-img" src="${esc(inv.packages.image)}" alt="">
+        <div class="body">
+          <h4>${esc(inv.packages.name)}</h4>
+          <div class="pkg-row"><span>Invested:</span><span>${money(inv.amount)}</span></div>
+          <div class="pkg-row"><span>Daily income:</span><span>${money(inv.daily_income)}</span></div>
+          <div class="pkg-row"><span>Days:</span><span>${inv.days_claimed}/${inv.days_total}</span></div>
+          <button class="btn btn-gold" style="width:100%;margin-top:10px"
+            data-claim="${inv.id}"
+            ${canClick && u.can_claim?'':'disabled style="opacity:.5"'}>
+            ${canClick?'✅ Click to claim':'⏳ Next click in 24h'}
+          </button>
+        </div>
+      </div>`;
+  }).join('');
+  list.querySelectorAll('[data-claim]').forEach(btn=>{
+    btn.addEventListener('click', ()=>claimInvestment(btn.dataset.claim));
+  });
+}
+
+async function claimInvestment(invId){
+  const { error } = await sb.rpc('claim_daily',{ p_investment_id: invId });
+  if(error) return showToast(error.message,'error');
+  showToast('Daily income added ✅','success');
+  renderUserPage('dashboard');
+}
+
+async function claimDailyBonus(){
+  const today = new Date().toISOString().slice(0,10);
+  const { error } = await sb.from('daily_bonus').insert({ user_id: CURRENT_USER.id, claimed_at: today });
+  if(error) return showToast('Already claimed today','error');
+  const { data:u } = await sb.from('users').select('income_wallet').eq('id',CURRENT_USER.id).single();
+  await sb.from('users').update({ income_wallet: Number(u.income_wallet)+10 }).eq('id',CURRENT_USER.id);
+  showToast('10 Birr added to income wallet 🎁','success');
+  renderUserPage('dashboard');
+}
+
+async function renderInvest(main){
+  const { data:profile } = await sb.from('users').select('*').eq('id',CURRENT_USER.id).single();
+  const { data:pkgs } = await sb.from('packages').select('*').eq('is_active',true).order('vip_level');
+
+  main.innerHTML = `
+    <div class="topbar"><h2>Investment Packages</h2>
+      <span>Recharge: <b>${money(profile.recharge_wallet)}</b></span></div>
+    <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(260px,1fr))">
+      ${pkgs.map(p=>`
+        <div class="pkg-card">
+          <img class="pkg-img" src="${esc(p.image)}" alt="">
+          <div class="body">
+            <h4>VIP ${p.vip_level} — ${esc(p.name)}</h4>
+            <div class="pkg-row"><span>Investment:</span><span>${money(p.investment)}</span></div>
+            <div class="pkg-row"><span>Daily:</span><span>${money(p.daily_income)}</span></div>
+            <div class="pkg-row"><span>Duration:</span><span>${p.days} days</span></div>
+            <div class="pkg-row"><span>Total:</span><span>${money(p.total_return)}</span></div>
+            <button class="btn btn-gold" style="width:100%;margin-top:10px" data-buy="${p.id}">
+              Buy Package
+            </button>
+          </div>
+        </div>`).join('')}
+    </div>`;
+
+  main.querySelectorAll('[data-buy]').forEach(b=>{
+    b.addEventListener('click',()=>buyPackage(b.dataset.buy));
+  });
+}
+
+async function buyPackage(pkgId){
+  if(!confirmAction('Confirm purchase?')) return;
+  const { error } = await sb.rpc('buy_package',{ p_package_id: Number(pkgId) });
+  if(error) return showToast(error.message,'error');
+  showToast('Package activated ✅','success');
+  renderUserPage('invest');
+}
+
+async function renderDeposit(main){
+  const { data:pkgs } = await sb.from('packages').select('*').order('vip_level');
+  const { data:myDeps } = await sb.from('deposits').select('*').eq('user_id',CURRENT_USER.id)
+    .order('created_at',{ascending:false});
+
+  main.innerHTML = `
+    <h2>Deposit Funds</h2>
+    <div class="card" style="margin:16px 0">
+      <h3>Step 1 — Send Payment</h3>
+      <p>Transfer to <b>CBE Account: ${CBE_ACCOUNT}</b></p>
+      <p style="margin-top:6px;color:#94a3b8">Minimum deposit: 1000 Birr</p>
+    </div>
+    <div class="card">
+      <h3>Step 2 — Submit Proof</h3>
+      <form id="depForm">
+        <label>Package</label>
+        <select id="depPkg">
+          ${pkgs.map(p=>`<option value="${p.id}" data-amount="${p.investment}">VIP ${p.vip_level} — ${esc(p.name)} (${p.investment} Birr)</option>`).join('')}
+        </select>
+        <label>Transaction ID</label><input id="depTx" required>
+        <label>Screenshot</label><input id="depFile" type="file" accept="image/*" required>
+        <button class="btn-primary" type="submit">Submit Deposit</button>
+      </form>
+    </div>
+    <div class="card" style="margin-top:16px">
+      <h3>My Deposits</h3>
+      <table><thead><tr><th>Date</th><th>Amount</th><th>TX ID</th><th>Status</th></tr></thead>
+      <tbody>
+        ${myDeps.map(d=>`
+          <tr><td>${dateStr(d.created_at)}</td><td>${money(d.amount)}</td>
+          <td style="font-size:11px">${esc(d.tx_id)}</td>
+          <td><span class="badge ${d.status}">${d.status}</span></td></tr>`).join('') ||
+          '<tr><td colspan="4">No deposits yet</td></tr>'}
+      </tbody></table>
+    </div>`;
+
+  $('depForm').addEventListener('submit', async e=>{
+    e.preventDefault();
+    const sel = $('depPkg');
+    const pkgId = sel.value;
+    const amount = Number(sel.selectedOptions[0].dataset.amount);
+    const txid = $('depTx').value.trim();
+    const file = $('depFile').files[0];
+    if(amount<1000) return showToast('Minimum 1000 Birr','error');
+
+    const path = `${CURRENT_USER.id}/${Date.now()}_${file.name}`;
+    const { error:upErr } = await sb.storage.from('screenshots').upload(path,file);
+    if(upErr) return showToast(upErr.message,'error');
+    const { data:{ publicUrl } } = sb.storage.from('screenshots').getPublicUrl(path);
+
+    const { error } = await sb.from('deposits').insert({
+      user_id:CURRENT_USER.id, package_id:Number(pkgId), amount, tx_id:txid, screenshot_url:publicUrl
+    });
+    if(error) return showToast(error.message.includes('duplicate')?'TX ID already used':error.message,'error');
+    showToast('Deposit submitted — pending approval','success');
+    renderUserPage('deposit');
+  });
+}
+
+async function renderWithdraw(main){
+  const { data:profile } = await sb.from('users').select('*').eq('id',CURRENT_USER.id).single();
+  const { data:hist } = await sb.from('withdrawals').select('*').eq('user_id',CURRENT_USER.id)
+    .order('created_at',{ascending:false});
+
+  main.innerHTML = `
+    <h2>Withdraw Funds</h2>
+    <div class="card" style="margin:16px 0">
+      <p>Available income: <b>${money(profile.income_wallet)}</b></p>
+      <p style="font-size:13px;color:#94a3b8;margin-top:6px">
+        Minimum 300 Birr • Once per 24h • No Sunday withdrawals
+      </p>
+    </div>
+    <div class="card">
+      <form id="wdForm">
+        <label>Amount (Birr)</label>
+        <input id="wdAmount" type="number" min="300" required>
+        <button class="btn-primary" type="submit">Request Withdrawal</button>
+      </form>
+    </div>
+    <div class="card" style="margin-top:16px">
+      <h3>History</h3>
+      <table><thead><tr><th>Date</th><th>Amount</th><th>Status</th></tr></thead>
+      <tbody>
+        ${hist.map(w=>`<tr><td>${dateStr(w.created_at)}</td><td>${money(w.amount)}</td>
+        <td><span class="badge ${w.status}">${w.status}</span></td></tr>`).join('') ||
+        '<tr><td colspan="3">No withdrawals yet</td></tr>'}
+      </tbody></table>
+    </div>`;
+
+  $('wdForm').addEventListener('submit', async e=>{
+    e.preventDefault();
+    const amt = Number($('wdAmount').value);
+    if(new Date().getDay()===0) return showToast('No withdrawals on Sunday','error');
+    if(!profile.can_withdraw) return showToast('Withdrawal disabled by admin','error');
+    if(amt<300) return showToast('Minimum 300 Birr','error');
+    if(amt>profile.income_wallet) return showToast('Insufficient balance','error');
+
+    const { data:last } = await sb.from('withdrawals').select('created_at').eq('user_id',CURRENT_USER.id)
+      .order('created_at',{ascending:false}).limit(1);
+    if(last.length && Date.now()-new Date(last[0].created_at)<24*3600*1000)
+      return showToast('Only one withdrawal per 24h','error');
+
+    const { error } = await sb.from('withdrawals').insert({ user_id:CURRENT_USER.id, amount:amt });
+    if(error) return showToast(error.message,'error');
+    showToast('Withdrawal requested','success');
+    renderUserPage('withdraw');
+  });
+}
+
+async function renderTeam(main){
+  const { data:me } = await sb.from('users').select('*').eq('id',CURRENT_USER.id).single();
+  const base = location.origin + location.pathname;
+  const refLink = `${base}?ref=${encodeURIComponent(me.referral_code)}#register`;
+
+  const { data:lvlA } = await sb.from('users').select('*').eq('referred_by',me.id);
+  const aIds = lvlA.map(u=>u.id);
+  let lvlB=[], lvlC=[];
+  if(aIds.length){
+    const { data:b } = await sb.from('users').select('id').in('referred_by',aIds);
+    lvlB = b||[];
+    const bIds = b.map(u=>u.id);
+    if(bIds.length){
+      const { data:c } = await sb.from('users').select('id').in('referred_by',bIds);
+      lvlC = c||[];
+    }
+  }
+  const { data:comms } = await sb.from('commissions').select('*').eq('user_id',me.id)
+    .order('created_at',{ascending:false});
+
+  main.innerHTML = `
+    <h2>My Team & Referrals</h2>
+    <div class="card" style="margin:16px 0">
+      <h3>Your Referral Link</h3>
+      <input id="refLink" readonly value="${esc(refLink)}">
+      <button class="btn btn-gold" style="margin-top:8px" id="copyRef">Copy Link</button>
+    </div>
+    <div class="wallets">
+      <div class="wallet-card"><small>Level A (18%)</small><h3>${lvlA.length}</h3></div>
+      <div class="wallet-card"><small>Level B (2%)</small><h3>${lvlB.length}</h3></div>
+      <div class="wallet-card"><small>Level C (1%)</small><h3>${lvlC.length}</h3></div>
+    </div>
+    <div class="card" style="margin-top:16px">
+      <h3>Direct Members</h3>
+      <table><thead><tr><th>Name</th><th>Phone</th><th>Status</th></tr></thead>
+      <tbody>
+        ${lvlA.map(u=>`<tr><td>${esc(u.full_name)}</td><td>${esc(u.phone)}</td>
+        <td>${u.is_banned?'<span class="badge rejected">Banned</span>':'<span class="badge approved">Active</span>'}</td></tr>`).join('') ||
+        '<tr><td colspan="3">No direct members yet</td></tr>'}
+      </tbody></table>
+    </div>
+    <div class="card" style="margin-top:16px">
+      <h3>Commission History</h3>
+      <table><thead><tr><th>Date</th><th>Level</th><th>Amount</th></tr></thead>
+      <tbody>
+        ${comms.map(c=>`<tr><td>${dateStr(c.created_at)}</td><td>Level ${c.level}</td>
+        <td>${money(c.amount)}</td></tr>`).join('') || '<tr><td colspan="3">No commissions yet</td></tr>'}
+      </tbody></table>
+    </div>`;
+
+  $('copyRef').addEventListener('click', ()=>{
+    navigator.clipboard.writeText($('refLink').value);
+    showToast('Copied!','success');
+  });
+}
+
+async function renderProfile(main){
+  const { data:u } = await sb.from('users').select('*').eq('id',CURRENT_USER.id).single();
+  main.innerHTML = `
+    <h2>Profile</h2>
+    <div class="card" style="margin-top:16px">
+      <div class="pkg-row"><span>Full Name:</span><b>${esc(u.full_name)}</b></div>
+      <div class="pkg-row"><span>Phone:</span><b>${esc(u.phone)}</b></div>
+      <div class="pkg-row"><span>User ID:</span><b>${u.user_code}</b></div>
+      <div class="pkg-row"><span>Referral Code:</span><b>${esc(u.referral_code)}</b></div>
+      <div class="pkg-row"><span>Income Wallet:</span><b>${money(u.income_wallet)}</b></div>
+      <div class="pkg-row"><span>Recharge Wallet:</span><b>${money(u.recharge_wallet)}</b></div>
+    </div>
+    <div class="card" style="margin-top:16px">
+      <h3>🎁 Redeem Gift Code</h3>
+      <form id="giftRedeemForm">
+        <label>Gift Code</label>
+        <input id="giftRedeemCode" required>
+        <button class="btn-primary" type="submit">Redeem</button>
+      </form>
+    </div>`;
+
+  $('giftRedeemForm').addEventListener('submit', async e=>{
+    e.preventDefault();
+    const code = $('giftRedeemCode').value.trim();
+    const { data, error } = await sb.rpc('redeem_gift',{ p_code: code });
+    if(error) return showToast(error.message,'error');
+    showToast(`✅ ${data} Birr added to income wallet`,'success');
+    renderUserPage('profile');
+  });
+}
+
+/* ============================================================
+   ADMIN PAGES
+   ============================================================ */
+async function renderAdminPage(tab){
+  const main = $('adminContent');
+  main.innerHTML = '<p>Loading…</p>';
+  document.querySelectorAll('#page-admin a[data-admin]').forEach(a=>a.classList.remove('active'));
+  document.querySelector(`#page-admin a[data-admin="${tab}"]`)?.classList.add('active');
+
+  if(tab==='dash')  return adminDash(main);
+  if(tab==='deps')  return adminDeps(main);
+  if(tab==='wds')   return adminWds(main);
+  if(tab==='users') return adminUsers(main);
+  if(tab==='gift')  return adminGift(main);
+}
+document.querySelectorAll('#page-admin a[data-admin]').forEach(a=>{
+  a.addEventListener('click', e=>{
+    e.preventDefault();
+    location.hash = '#admin-' + a.dataset.admin;
+  });
+});
+
+async function adminDash(main){
+  const { data:deps } = await sb.from('deposits').select('amount,status');
+  const { data:wds }  = await sb.from('withdrawals').select('amount,status');
+  const totDep = deps.filter(d=>d.status==='approved').reduce((a,b)=>a+Number(b.amount),0);
+  const totWd  = wds.filter(w=>w.status==='approved').reduce((a,b)=>a+Number(b.amount),0);
+  main.innerHTML = `
+    <h2>Admin Dashboard</h2>
+    <div class="wallets" style="margin-top:16px">
+      <div class="wallet-card"><small>Approved Deposits</small><h3>${money(totDep)}</h3></div>
+      <div class="wallet-card"><small>Approved Withdrawals</small><h3>${money(totWd)}</h3></div>
+      <div class="wallet-card"><small>Net Balance</small><h3>${money(totDep-totWd)}</h3></div>
+    </div>`;
+}
+
+async function adminDeps(main){
+  const { data } = await sb.from('deposits').select('*, users(full_name,phone)')
+    .order('created_at',{ascending:false});
+  main.innerHTML = `<h2>Deposits</h2>
+    <table><thead><tr><th>User</th><th>Amount</th><th>TX</th><th>Status</th><th>Proof</th><th>Action</th></tr></thead>
+    <tbody>
+      ${data.map(d=>`<tr>
+        <td>${esc(d.users?.full_name||'—')}<br><small>${esc(d.users?.phone||'')}</small></td>
+        <td>${money(d.amount)}</td><td style="font-size:11px">${esc(d.tx_id)}</td>
+        <td><span class="badge ${d.status}">${d.status}</span></td>
+        <td><a href="${esc(d.screenshot_url)}" target="_blank">view</a></td>
+        <td>${d.status==='pending'?`
+          <button class="btn btn-green" data-approve-dep="${d.id}">✓</button>
+          <button class="btn btn-red" data-reject-dep="${d.id}">✗</button>`:''}</td>
+      </tr>`).join('') || '<tr><td colspan="6">No deposits</td></tr>'}
+    </tbody></table>`;
+
+  main.querySelectorAll('[data-approve-dep]').forEach(b=>{
+    b.addEventListener('click', async ()=>{
+      const { error } = await sb.rpc('approve_deposit',{ p_deposit_id: b.dataset.approveDep });
+      if(error) return showToast(error.message,'error');
+      showToast('Deposit approved','success'); adminDeps(main);
+    });
+  });
+  main.querySelectorAll('[data-reject-dep]').forEach(b=>{
+    b.addEventListener('click', async ()=>{
+      await sb.from('deposits').update({status:'rejected'}).eq('id',b.dataset.rejectDep);
+      showToast('Deposit rejected','success'); adminDeps(main);
+    });
+  });
+}
+
+async function adminWds(main){
+  const { data } = await sb.from('withdrawals').select('*, users(full_name,phone)')
+    .order('created_at',{ascending:false});
+  main.innerHTML = `<h2>Withdrawals</h2>
+    <table><thead><tr><th>User</th><th>Amount</th><th>Status</th><th>Action</th></tr></thead>
+    <tbody>
+      ${data.map(w=>`<tr>
+        <td>${esc(w.users?.full_name||'—')}<br><small>${esc(w.users?.phone||'')}</small></td>
+        <td>${money(w.amount)}</td>
+        <td><span class="badge ${w.status}">${w.status}</span></td>
+        <td>${w.status==='pending'?`
+          <button class="btn btn-green" data-approve-wd="${w.id}">✓</button>
+          <button class="btn btn-red" data-reject-wd="${w.id}">✗</button>`:
+          w.status==='rejected'?`<button class="btn btn-gray" data-unreject="${w.id}">↺ Unreject</button>`:''}</td>
+      </tr>`).join('') || '<tr><td colspan="4">No withdrawals</td></tr>'}
+    </tbody></table>`;
+
+  main.querySelectorAll('[data-approve-wd]').forEach(b=>{
+    b.addEventListener('click', async ()=>{
+      const { error } = await sb.rpc('approve_withdrawal',{ p_withdrawal_id: b.dataset.approveWd });
+      if(error) return showToast(error.message,'error');
+      showToast('Withdrawal approved','success'); adminWds(main);
+    });
+  });
+  main.querySelectorAll('[data-reject-wd]').forEach(b=>{
+    b.addEventListener('click', async ()=>{
+      const { error } = await sb.rpc('reject_withdrawal',{ p_withdrawal_id: b.dataset.rejectWd });
+      if(error) return showToast(error.message,'error');
+      showToast('Withdrawal rejected — money returns to user','success'); adminWds(main);
+    });
+  });
+  main.querySelectorAll('[data-unreject]').forEach(b=>{
+    b.addEventListener('click', async ()=>{
+      await sb.from('withdrawals').update({status:'pending'}).eq('id',b.dataset.unreject);
+      adminWds(main);
+    });
+  });
+}
+
+async function adminUsers(main){
+  const { data } = await sb.from('users').select('*').order('created_at',{ascending:false});
+  main.innerHTML = `<h2>Users (${data.length})</h2>
+    <table><thead><tr>
+      <th>Code</th><th>Name</th><th>Phone</th><th>Income</th><th>Recharge</th>
+      <th>Claim</th><th>Withdraw</th><th>Status</th><th>Actions</th></tr></thead>
+    <tbody>
+      ${data.map(u=>`<tr>
+        <td style="font-size:11px">${u.user_code}</td>
+        <td>${esc(u.full_name)}</td><td>${esc(u.phone)}</td>
+        <td>${money(u.income_wallet)}</td><td>${money(u.recharge_wallet)}</td>
+        <td><input type="checkbox" ${u.can_claim?'checked':''} data-claim-toggle="${u.id}"></td>
+        <td><input type="checkbox" ${u.can_withdraw?'checked':''} data-withdraw-toggle="${u.id}"></td>
+        <td>${u.is_banned?'<span class="badge rejected">Banned</span>':'<span class="badge approved">Active</span>'}</td>
+        <td>
+          <button class="btn btn-gray" data-add-income="${u.id}">+Income</button>
+          <button class="btn btn-gray" data-add-recharge="${u.id}">+Recharge</button>
+          <button class="btn ${u.is_banned?'btn-green':'btn-red'}" data-ban-toggle="${u.id}">
+            ${u.is_banned?'Restore':'Ban'}</button>
+        </td></tr>`).join('')}
+    </tbody></table>`;
+
+  main.querySelectorAll('[data-claim-toggle]').forEach(cb=>{
+    cb.addEventListener('change',()=>{
+      sb.from('users').update({can_claim:cb.checked}).eq('id',cb.dataset.claimToggle);
+    });
+  });
+  main.querySelectorAll('[data-withdraw-toggle]').forEach(cb=>{
+    cb.addEventListener('change',()=>{
+      sb.from('users').update({can_withdraw:cb.checked}).eq('id',cb.dataset.withdrawToggle);
+    });
+  });
+  main.querySelectorAll('[data-ban-toggle]').forEach(b=>{
+    b.addEventListener('click', async ()=>{
+      const uid = b.dataset.banToggle;
+      const { data:u } = await sb.from('users').select('is_banned').eq('id',uid).single();
+      await sb.from('users').update({is_banned:!u.is_banned}).eq('id',uid);
+      adminUsers(main);
+    });
+  });
+  main.querySelectorAll('[data-add-income]').forEach(b=>{
+    b.addEventListener('click', async ()=>{
+      const amt = promptNumber('Amount to add to income:');
+      if(amt===null||isNaN(amt)) return;
+      await sb.rpc('admin_add_balance',{p_user_id:b.dataset.addIncome, p_field:'income_wallet', p_amount:amt});
+      adminUsers(main);
+    });
+  });
+  main.querySelectorAll('[data-add-recharge]').forEach(b=>{
+    b.addEventListener('click', async ()=>{
+      const amt = promptNumber('Amount to add to recharge:');
+      if(amt===null||isNaN(amt)) return;
+      await sb.rpc('admin_add_balance',{p_user_id:b.dataset.addRecharge, p_field:'recharge_wallet', p_amount:amt});
+      adminUsers(main);
+    });
+  });
+}
+
+async function adminGift(main){
+  const { data } = await sb.from('gift_codes').select('*').order('created_at',{ascending:false});
+  main.innerHTML = `<h2>Gift Codes</h2>
+    <div class="card" style="margin:16px 0">
+      <h3>Create Gift Code</h3>
+      <form id="giftCreateForm">
+        <label>Code</label><input id="giftCode" required>
+        <label>Amount (Birr)</label><input id="giftAmount" type="number" required>
+        <label>Max Uses</label><input id="giftUses" type="number" value="1" required>
+        <button class="btn-primary" type="submit">Create</button>
+      </form>
+    </div>
+    <table><thead><tr><th>Code</th><th>Amount</th><th>Used</th><th>Active</th></tr></thead>
+    <tbody>
+      ${data.map(g=>`<tr><td>${esc(g.code)}</td><td>${money(g.amount)}</td>
+        <td>${g.used_count}/${g.max_uses}</td>
+        <td><input type="checkbox" ${g.is_active?'checked':''} data-gift-toggle="${g.id}"></td>
+      </tr>`).join('') || '<tr><td colspan="4">No gift codes</td></tr>'}
+    </tbody></table>`;
+
+  $('giftCreateForm').addEventListener('submit', async e=>{
+    e.preventDefault();
+    await sb.from('gift_codes').insert({
+      code: $('giftCode').value.trim(),
+      amount: Number($('giftAmount').value),
+      max_uses: Number($('giftUses').value)
+    });
+    showToast('Gift code created','success');
+    adminGift(main);
+  });
+  main.querySelectorAll('[data-gift-toggle]').forEach(cb=>{
+    cb.addEventListener('change',()=>{
+      sb.from('gift_codes').update({is_active:cb.checked}).eq('id',cb.dataset.giftToggle);
+    });
+  });
+}
+
+/* ============================================================
+   BOOT
+   ============================================================ */
+(async function boot(){
+  const params = new URLSearchParams(location.search);
+  const ref = params.get('ref');
+  if(ref && $('regRef')) $('regRef').value = ref;
+
+  await restoreSession();
+  if(!location.hash) location.hash = CURRENT_USER ? (IS_ADMIN?'#admin-dash':'#dashboard') : '#login';
+  nav(location.hash);
+})();
+</script>
+</body>
+</html>
